@@ -1,13 +1,3 @@
-# Detta är en rubrik
-
-```
-kod
-```
-
-text blbla bla
-**bold**
-*kursiv*
-
 # Hotspot analysis
 ## Create sample sheet
 ### Download data in TSV format
