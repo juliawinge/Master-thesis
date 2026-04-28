@@ -1,7 +1,0 @@
-# Find Hot spots (At least 3 mutations in a specific site, each from unique patients)
-
-Set your working dictionary
-```
-cd /home/juliawinge03/hot_spot_analysis
-```
-
