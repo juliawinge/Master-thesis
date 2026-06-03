@@ -1,10 +1,16 @@
-# Create and run the hotspot analysis using the Ubuntu terminal
-## Create the script
-Go to a dictionary dedicated to your analysis:
+# Create and run the hotspot analysis 
+*This step identifies recurrent mutation sites, referred to here as hotspots, from the simplified COSMIC sample sheets. A hotspot is defined as the same cDNA position occurring in at least three unique patients.*
+*The script scans all `.tsv` and `.txt` files in the analysis directory and writes a summary file called `hotspot_results.txt`.*
+
+## 1. Go to the analysis directory
+Go to a directory dedicated to your analysis:
 ```
 cd /your_directory/hot_spot_analysis/
 ```
-Create a file for your .py script:
+The directory should contain the simplified input files created from downloaded COSMIC data. 
+
+## 2. Create a Python script
+Create a new Python script:
 ```
 nano run_hotspot.py
 ```
@@ -210,12 +216,17 @@ if __name__ == "__main__":
     main()
 
 ```
-Save by pressing Ctrl+O, pressing Enter, followed by Ctrl+X.
+Save the file by pressing `Ctrl+O`, then `Enter`, followed by `Ctrl+X`.
 
-## Run the Hotspot analysis
-Run the program using the following command:
+## 4. Run the Hotspot analysis
+Run the script:
 ```
 python3 -u run_hotspot.py
 ```
-Your output will be saved as a list in the designated folder. 
-Note and mark the given information regarding the target site. 
+
+## 5. Output
+The results will be saved in the analysis directory as:
+```
+hotspot_results.txt
+```
+The output lists each input file separately. For each file, it reports whether hotspots were found, and gives the target site, number of unique patients, sample IDs, and mutation annotations. 
