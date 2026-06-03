@@ -1,5 +1,5 @@
 # Create and run the hot region analysis 
-*This step identifies mutation-rich regions, referred to here as **hot regions**, from the simplified COSMIC sample sheets. A hot region was defined as a 50 bp window containing mutations from at least four unique patients.* 
+*This step identifies mutation-rich regions, referred to here as **hot regions**, from the simplified COSMIC sample sheets. A hot region was defined as a 50 bp window containing mutations from at least five unique patients.* 
 
 *The script scans all `.tsv` and `.txt` files in the analysis directory and writes a summary file called `hotregion_results.txt`.*
 
@@ -13,10 +13,11 @@ The directory should contain the simplified input files created from downloaded 
 ## 2. Create a Python script
 Create a new Python script:
 ```
-nano run_hotspot.py
+nano run_hotregion.py
 ```
 Paste the following code:
 ```
+```python
 import csv
 import re
 from pathlib import Path
@@ -24,28 +25,32 @@ from collections import defaultdict
 
 # ======= SETTINGS =======
 # Directory where the script will be run
-ROOT = Path("/your_dictionary/hot_spot_region_analysis")
+ROOT = Path("/home/juliawinge03/hot_spot_analysis")
 
-# Hotspot threshold: same site must appear in  ≥ N unique patients
-MIN_UNIQUE_PATIENTS = 3
+# Hot region threshold: the region must contain mutations from ≥ N unique patients
+MIN_UNIQUE_SAMPLES = 5
+
+# Number of bases included in the hot region sliding window
+WINDOW_BP = 50
 
 # Column names expected in the TSV/TXT files
-COL_SAMPLE_ID = "sample_id" 
-COL_SAMPLE_NAME = "sample_name"  
+COL_SAMPLE_ID = "sample_id"
+COL_SAMPLE_NAME = "sample_name"
 COL_MUT = "cds_mutation"
 
 # File type to scan under ROOT
 ALLOWED_SUFFIXES = {".tsv", ".txt"}
 
 # Output summary file written inside ROOT
-OUTPUT_FILENAME = "hotspot_results.txt"
+OUTPUT_FILENAME = "hotregion_results.txt"
 # ==================================================================================================
 
+
 # Extract the numerical cDNA-position from the HGVS c.-notation to group mutations
-# that occur at the same site. Potential variants in the 3'UTR (c.*) are excluded from this analysis. 
+# that occur within the same region. Potential variants in the 3'UTR (c.*) are excluded from this analysis.
 def pos_from_hgvs(h: str):
 
-# Ignore empty values and 3'UTR variants (c.*). 
+# Ignore empty values and 3'UTR variants.
     h = (h or "").strip()
     if not h or h.startswith("c.*"):
         return None
@@ -56,98 +61,183 @@ def pos_from_hgvs(h: str):
         base, sign, off = int(m.group(1)), m.group(2), int(m.group(3))
         return base + off if sign == "+" else base - off
 
-
 # If there are point mutations in the intronic region, the position is calculated as the exon position
-# +/- intronic offset. 
+# +/- intronic offset.
     m = re.match(r"^c\.(\d+)([+-])(\d+)", h)
     if m:
         base, sign, off = int(m.group(1)), m.group(2), int(m.group(3))
         return base + off if sign == "+" else base - off
 
 # If there are point mutations in the exonic region, the numeric cDNA position directly represents
-# the mutation site. 
+# the mutation site.
     m = re.match(r"^c\.(\d+)", h)
     return int(m.group(1)) if m else None
 # ==================================================================================================
 
-# Read TSV/TXT file and extract the minimal information needed for hotspot calling:
-# patient (sample_name), sample (sample_id), and a numeric cDNA position. 
+
+# Read TSV/TXT file and extract the minimal information needed for hot region calling:
+# sample (sample_id), patient/sample name (sample_name), mutation, and a numeric cDNA position.
 def read_table(path: Path):
     rows = []
 
-# Open input file (tab separated).   
+# Open input file (tab separated).
     with path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
 
-# Check if the file has a header.         
+# Check if the file has a header.
         if not reader.fieldnames:
             raise ValueError("Empty file or missing header.")
 
-# Requires sample_name and cds_mutation. 
+# Requires sample_name and cds_mutation.
         if COL_SAMPLE_NAME not in reader.fieldnames or COL_MUT not in reader.fieldnames:
             raise ValueError(
                 f"Missing required column(s). Found: {reader.fieldnames}. "
                 f"Required: {COL_SAMPLE_NAME}, {COL_MUT}  (sample_id optional)."
             )
-            
-#  sample_id is optional but is kept for traceability. 
+
+# sample_id is optional but is kept for traceability.
         has_id = COL_SAMPLE_ID in reader.fieldnames
 
-# Go through rows and extract relevant fields. 
+# Go through rows and extract relevant fields.
         for r in reader:
             sname = (r.get(COL_SAMPLE_NAME) or "").strip()
             mut = (r.get(COL_MUT) or "").strip()
             sid = (r.get(COL_SAMPLE_ID) or "").strip() if has_id else ""
 
-# Skip rows with missing sample_name or mutation. sample_name defines unique patient -> must exist
+# Skip rows with missing sample_name or mutation. sample_name is used together with sample_id
+# to define unique patients/samples.
             if not sname or not mut:
                 continue
 
-# Convert HGVS -> numerical cDNA position. 
+# Convert HGVS -> numerical cDNA position.
             pos = pos_from_hgvs(mut)
             if pos is None:
                 continue
-                
-# Store mutations linked to patient and position. 
+
+# Store mutations linked to position, sample_id, sample_name, and mutation.
             rows.append((pos, sname, sid, mut))
 
+# Sort mutations by cDNA position before applying the sliding window.
+    rows.sort(key=lambda x: x[0])
     return rows
 # ==================================================================================================
 
-# Identify hotspots by grouping by site and counting unique patients (unique sample_name) per site.
-# One patient contributes at most once per site. 
-def find_hotspots(rows):
 
-    # pos -> sample_name -> {"sample_ids": set(), "muts": set ()}
-    per_pos = defaultdict(lambda: defaultdict(lambda: {"sample_ids": set(), "muts": set()}))
+# Summarize which patients/samples and mutations are present in the window.
+# Unique patient/sample is defined by the combination of sample_id and sample_name.
+def summarize_window(window_rows):
+    per = {}
+    name_to_ids = defaultdict(set)
 
-    for pos, sname, sid, mut in rows:
-        per_pos[pos][sname]["muts"].add(mut)
-        if sid:
-            per_pos[pos][sname]["sample_ids"].add(sid)
+    for _, sid, sname, mut in window_rows:
+        sid_norm = (sid or "").strip()
+        sname_norm = (sname or "").strip()
 
-    hotspots = []
-    for pos, patients in per_pos.items():
-        n_unique = len(patients)
-        if n_unique >= MIN_UNIQUE_PATIENTS:
-            hotspots.append({
-                "pos": pos,
-                "n_unique": n_unique,
-                "patients": patients,  # sample_name -> {"sample_ids", "muts"}
-            })
+# Track possible inconsistencies where the same sample_name is linked to several sample_ids.
+        if sname_norm:
+            name_to_ids[sname_norm].add(sid_norm)
 
-# Sort: most patients first, then lowest position
-    hotspots.sort(key=lambda h: (-h["n_unique"], h["pos"]))
-    return hotspots
+# Use sample_id and sample_name together as patient/sample key.
+        patient_key = (sid_norm, sname_norm)
+
+# Store all mutations observed for each patient/sample within the window.
+        per.setdefault(patient_key, {"sample_id": sid_norm, "sample_name": sname_norm, "muts": set()})
+        per[patient_key]["muts"].add(mut)
+
+# Keep warnings for sample_names linked to more than one sample_id.
+    conflicts = {name: ids for name, ids in name_to_ids.items() if len(ids) > 1}
+    return per, conflicts
 # ==================================================================================================
 
-# Find all candidate input files under ROOT
+
+# Identify candidate hot regions using a sliding window.
+# A candidate region is created when at least MIN_UNIQUE_SAMPLES unique patients/samples
+# occur within WINDOW_BP.
+def generate_candidate_hotregions(rows):
+    left = 0
+
+# Count how many rows from each patient/sample key are present in the current window.
+    patient_counts = defaultdict(int)
+
+    candidates = []
+    seen = set()
+
+    for right in range(len(rows)):
+        pos_r, sid_r, sname_r, _ = rows[right]
+        patient_key_r = ((sid_r or "").strip(), (sname_r or "").strip())
+        patient_counts[patient_key_r] += 1
+
+# Move the left side of the window until the window is within WINDOW_BP.
+        while pos_r - rows[left][0] > WINDOW_BP:
+            _, sid_l, sname_l, _ = rows[left]
+            patient_key_l = ((sid_l or "").strip(), (sname_l or "").strip())
+
+            patient_counts[patient_key_l] -= 1
+            if patient_counts[patient_key_l] == 0:
+                del patient_counts[patient_key_l]
+            left += 1
+
+# Create a candidate region if enough unique patients/samples are present.
+        if len(patient_counts) >= MIN_UNIQUE_SAMPLES:
+            window_rows = rows[left:right + 1]
+
+            per, conflicts = summarize_window(window_rows)
+            start = rows[left][0]
+            end = rows[right][0]
+            span = end - start
+
+            patientset = frozenset(per.keys())
+
+# Avoid storing identical candidate regions more than once.
+            key = (start, end, tuple(sorted(patientset)))
+            if key not in seen:
+                seen.add(key)
+                candidates.append({
+                    "start": start,
+                    "end": end,
+                    "span": span,
+                    "n_unique": len(patientset),
+                    "sampleset": patientset,
+                    "per_sample": per,
+                    "conflicts": conflicts
+                })
+
+    return candidates
+# ==================================================================================================
+
+
+# Remove redundant hot regions.
+# A candidate is removed if it lies completely within a larger accepted hot region
+# and does not add any new patients/samples.
+def filter_redundant(candidates):
+
+# Sort: most patients/samples first, then shortest span, then lowest position.
+    candidates.sort(key=lambda c: (-c["n_unique"], c["span"], c["start"], c["end"]))
+
+    kept = []
+    for c in candidates:
+        redundant = False
+
+        for k in kept:
+            if k["start"] <= c["start"] and c["end"] <= k["end"]:
+                if c["sampleset"].issubset(k["sampleset"]):
+                    redundant = True
+                    break
+
+        if not redundant:
+            kept.append(c)
+
+    return kept
+# ==================================================================================================
+
+
+# Find all candidate input files under ROOT.
 def main():
     files = []
     for suf in ALLOWED_SUFFIXES:
         files.extend(ROOT.rglob(f"*{suf}"))
- 
- # Avoid re-reading our own output file if it matches the suffix. 
+
+# Avoid re-reading our own output file if it matches the suffix.
     files = sorted([p for p in files if p.name != OUTPUT_FILENAME])
 
     if not files:
@@ -157,10 +247,12 @@ def main():
     out_path = ROOT / OUTPUT_FILENAME
     summary_lines = []
 
-# Print run settings
-    print(f" Hotspot search in {ROOT}", flush=True)
-    print(f"   - patient identifier: {COL_SAMPLE_NAME}", flush=True)
-    print(f"   - threshold: ≥{MIN_UNIQUE_PATIENTS} unique patients per site\n", flush=True)
+# Print run settings.
+    print(f"Hot region search in {ROOT}", flush=True)
+    print(f"   - window size: {WINDOW_BP} bp", flush=True)
+    print(f"   - threshold: >={MIN_UNIQUE_SAMPLES} unique patients/samples", flush=True)
+    print(f"   - sorting: most patients/samples first", flush=True)
+    print(f"   - filtering: smaller regions within larger regions are removed\n", flush=True)
 
     for path in files:
         rel = path.relative_to(ROOT)
@@ -177,47 +269,54 @@ def main():
             summary_lines.append(msg)
             continue
 
-        hotspots = find_hotspots(rows)
+        candidates = generate_candidate_hotregions(rows)
+        kept = filter_redundant(candidates)
 
-        if not hotspots:
-            msg = f"No hotspots found (≥{MIN_UNIQUE_PATIENTS} unique patients at same site)."
+        if not kept:
+            msg = f"No hot regions found (>={MIN_UNIQUE_SAMPLES} unique patients/samples within {WINDOW_BP} bp)."
             print(msg, flush=True)
             summary_lines.append(msg)
             continue
 
-        msg = f"Found {len(hotspots)} hotspot(s):"
+        msg = f"Found {len(kept)} hot region(s) after filtering:"
         print(msg, flush=True)
         summary_lines.append(msg)
 
-# Print each hotspot and the patients contributing to it
-        for i, h in enumerate(hotspots, 1):
-            line = f"[{i}] SITE {h['pos']} (unique patients: {h['n_unique']})"
+# Print each hot region and the patients/samples contributing to it.
+        for i, h in enumerate(kept, 1):
+            tag = f"HOTREGION_{h['n_unique']}"
+            line = (
+                f"[{i}] {tag}: {h['start']}-{h['end']} "
+                f"(span {h['span']} bp), unique patients/samples: {h['n_unique']}"
+            )
             print(line, flush=True)
             summary_lines.append(line)
 
-# List patients, with their mutations and sample_ids. 
-            for sname in sorted(h["patients"].keys()):
-                muts = "; ".join(sorted(h["patients"][sname]["muts"]))
-                sids = sorted(h["patients"][sname]["sample_ids"])
-
-                if sids:
-                    line2 = f"   - {sname} [sample_id: {', '.join(sids)}]: {muts}"
-                else:
-                    line2 = f"   - {sname}: {muts}"
-
+# List patients/samples with their mutations.
+            per = h["per_sample"]
+            for (sid, sname) in sorted(per.keys()):
+                label = f"{sid}" + (f" ({sname})" if sname else "")
+                muts = "; ".join(sorted(per[(sid, sname)]["muts"]))
+                line2 = f"   - {label}: {muts}"
                 print(line2, flush=True)
                 summary_lines.append(line2)
 
-# Save the same summary as the terminal output
+# Warn if the same sample_name is linked to several sample_ids in the same hot region.
+            conflicts = h.get("conflicts", {})
+            if conflicts:
+                warn = f"   ! WARNING: sample_name linked to several sample_ids in this hot region: {conflicts}"
+                print(warn, flush=True)
+                summary_lines.append(warn)
+
+# Save the same summary as the terminal output.
     out_path.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
-    print(f"\n Saved summary: {out_path}", flush=True)
-                
+    print(f"\nSaved summary: {out_path}", flush=True)
+
 
 if __name__ == "__main__":
     main()
-
 ```
-Save the file by pressing `Ctrl+O`, then `Enter`, followed by `Ctrl+X`.
+
 
 ## 4. Run the Hotspot analysis
 Run the script:
