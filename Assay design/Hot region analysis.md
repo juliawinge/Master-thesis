@@ -1,5 +1,5 @@
 # Create and run the hot region analysis 
-*This step identifies mutation-rich regions, referred to here as **hot regions**, from the simplified COSMIC sample sheets. A hot region was defined as a 50 bp window containing mutations from at least four unice patients.* 
+*This step identifies mutation-rich regions, referred to here as **hot regions**, from the simplified COSMIC sample sheets. A hot region was defined as a 50 bp window containing mutations from at least four unique patients.* 
 
 *The script scans all `.tsv` and `.txt` files in the analysis directory and writes a summary file called `hotregion_results.txt`.*
 
@@ -24,7 +24,7 @@ from collections import defaultdict
 
 # ======= SETTINGS =======
 # Directory where the script will be run
-ROOT = Path("/your_dictionary/hot_spot_analysis")
+ROOT = Path("/your_dictionary/hot_spot_region_analysis")
 
 # Hotspot threshold: same site must appear in  ≥ N unique patients
 MIN_UNIQUE_PATIENTS = 3
