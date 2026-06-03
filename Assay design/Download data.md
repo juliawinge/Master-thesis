@@ -1,23 +1,55 @@
-# Download data in TSV format
-## Based on Tissue type
-Download data of interest from COSMIC (https://cancer.sanger.ac.uk/cosmic) by searching on your GOI. Choose the dataset with the highest number of samples. Scroll down to the table **"Tissue distribution"** and click on the bar under point mutations for the tissue of interest. 
+# Download COSMIC data in TSV format
+*This section describes how to download mutation data from COSMIC in `.tsv`format. Data can be downloaded either by tissue type or by histology selection.*
+
+## Reqierments
+Access to COSMIC is required:
+https://cancer.sanger.ac.uk/cosmic
+
+## Option 1: Download data based on tissue type
+### 1. Search for the gene of interest
+Go to COSMIC and search for your gene of interest (GOI).
+Select the dataset with the highest number of samples. 
+
+### 2. Open tissue-specific mutation data
+
+Scroll down to the table **Tissue distribution**. 
+Click on the bar under **Point mutations** for the tissue type of interest. 
 <img width="981" height="293" alt="image" src="https://github.com/user-attachments/assets/41ec270f-91aa-44d6-acb1-8222136905e2" />
- 
-Go to **"Positive data"**, scroll to the right in the table and press on the column header so that the arrow points upwards, to sort the samples based on coordinates. 
+
+ ### 3. Sort the positive data table
+Go to **Positive data**.
+Scroll to the right in the table, then click the column header for genomic coordinates. Make sure the arrow points upwards, so the samples are sorted by coordinate.
 <img width="263" height="215" alt="image" src="https://github.com/user-attachments/assets/86dadeb6-3bb4-4154-b965-8a9dc0127d94" /> 
 
-Click on Export: **TSV**. 
+### 4. Export the data
+Click **Export** and select **TSV**. 
 <img width="995" height="280" alt="image" src="https://github.com/user-attachments/assets/382b461a-4b58-406e-80fc-5cee5be825bf" /> 
 
-## Based on Histology
-If you instead want to look at a specific "Histology selection" like Endometriosis, you need to start out by searching the term **"Endometriosis"** in the search bar instead of your GOI. Click on the dataset with the most samples. 
+The downloaded file can then be used for downstream filtering and analysis. 
 
-You will then get a similar box as below based on your applied settings, here it is **very important** that you press  **"Go"** to actually apply the filter, otherwise it won't apply and the information will be misleading. 
+## Option 2: Download data based on histology
+This option can be used when you want to download data from a specific histology selection, such as endometriosis. 
+
+### 1. Search for the histology term
+Instead of searching for a GOI, search for the histology term in the COSMIC search bar. 
+For example: **"Endometriosis"** 
+Select the dataset with the highest number of samples. 
+
+### 2. Apply the histology filter
+A filter box will appear based on the selected search term and settings. 
+
+It is **very important** to click **Go** to apply the filter. If this is not done, the filter will not be applied, and the information will be misleading. 
 <img width="987" height="362" alt="image" src="https://github.com/user-attachments/assets/af190061-3f4b-49b8-a399-5916522d61a3" />
 
- You will then scroll down and press on **"Genes with mutations"**
+### 3. Open genes with mutations
+Scroll down and click **Genes with mutations**.
 <img width="882" height="608" alt="image" src="https://github.com/user-attachments/assets/1aac4147-d5c1-4798-bc6d-9e6dad9a7e20" />
 
- Search for your GOI in the search bar, if there are any hits, they will be listed, if nothing is listed data is missing for the specific gene in the specific histology type.
+### 4. Search for the gene of interest
+Search for your GOI in the search bar.
+If there are any hits, the genes will be listed. If nothing is listed, COSMIC does not contain mutation data for the specific gene in the selected histology type.
 <img width="1362" height="356" alt="image" src="https://github.com/user-attachments/assets/9204b931-dcf6-4d1e-a948-530b9a44cc11" />
-If there are hits, download the tsv according to previous instructions. If there are no hits, there is nothing to do about it. 
+
+### 5. Export the data
+If there are hits for the GOI, download the data as a `.tsv` file by following the export steps described in **Option 1**.
+If there are no hits, there is no available COSMIC mutation data for that gene, and you can continue with the next GOI. 
