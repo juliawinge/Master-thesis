@@ -17,7 +17,6 @@ nano run_hotregion.py
 ```
 Paste the following code:
 ```
-```python
 import csv
 import re
 from pathlib import Path
@@ -43,9 +42,8 @@ ALLOWED_SUFFIXES = {".tsv", ".txt"}
 
 # Output summary file written inside ROOT
 OUTPUT_FILENAME = "hotregion_results.txt"
+
 # ==================================================================================================
-
-
 # Extract the numerical cDNA-position from the HGVS c.-notation to group mutations
 # that occur within the same region. Potential variants in the 3'UTR (c.*) are excluded from this analysis.
 def pos_from_hgvs(h: str):
@@ -72,9 +70,8 @@ def pos_from_hgvs(h: str):
 # the mutation site.
     m = re.match(r"^c\.(\d+)", h)
     return int(m.group(1)) if m else None
+
 # ==================================================================================================
-
-
 # Read TSV/TXT file and extract the minimal information needed for hot region calling:
 # sample (sample_id), patient/sample name (sample_name), mutation, and a numeric cDNA position.
 def read_table(path: Path):
@@ -105,7 +102,7 @@ def read_table(path: Path):
             sid = (r.get(COL_SAMPLE_ID) or "").strip() if has_id else ""
 
 # Skip rows with missing sample_name or mutation. sample_name is used together with sample_id
-# to define unique patients/samples.
+# to define unique patients.
             if not sname or not mut:
                 continue
 
@@ -120,11 +117,10 @@ def read_table(path: Path):
 # Sort mutations by cDNA position before applying the sliding window.
     rows.sort(key=lambda x: x[0])
     return rows
+
 # ==================================================================================================
-
-
-# Summarize which patients/samples and mutations are present in the window.
-# Unique patient/sample is defined by the combination of sample_id and sample_name.
+# Summarize which patients and mutations are present in the window.
+# A unique patient is defined by the combination of unique sample_id and sample_name.
 def summarize_window(window_rows):
     per = {}
     name_to_ids = defaultdict(set)
@@ -147,9 +143,8 @@ def summarize_window(window_rows):
 # Keep warnings for sample_names linked to more than one sample_id.
     conflicts = {name: ids for name, ids in name_to_ids.items() if len(ids) > 1}
     return per, conflicts
+
 # ==================================================================================================
-
-
 # Identify candidate hot regions using a sliding window.
 # A candidate region is created when at least MIN_UNIQUE_SAMPLES unique patients/samples
 # occur within WINDOW_BP.
@@ -203,9 +198,8 @@ def generate_candidate_hotregions(rows):
                 })
 
     return candidates
+
 # ==================================================================================================
-
-
 # Remove redundant hot regions.
 # A candidate is removed if it lies completely within a larger accepted hot region
 # and does not add any new patients/samples.
@@ -228,9 +222,8 @@ def filter_redundant(candidates):
             kept.append(c)
 
     return kept
+
 # ==================================================================================================
-
-
 # Find all candidate input files under ROOT.
 def main():
     files = []
