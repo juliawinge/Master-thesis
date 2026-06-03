@@ -25,7 +25,7 @@ from collections import defaultdict
 
 # ======= SETTINGS =======
 # Directory where the script will be run
-ROOT = Path("/home/juliawinge03/hot_spot_analysis")
+ROOT = Path("/your_dictionary/hot_spot_region_analysis")
 
 # Hot region threshold: the region must contain mutations from ≥ N unique patients
 MIN_UNIQUE_SAMPLES = 5
@@ -316,17 +316,17 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+Save the file by pressing `Ctrl+O`, then `Enter`, followed by `Ctrl+X`.
 
-
-## 4. Run the Hotspot analysis
+## 4. Run the Hot region analysis
 Run the script:
 ```
-python3 -u run_hotspot.py
+python3 -u run_hotregion.py
 ```
 
 ## 5. Output
 The results will be saved in the analysis directory as:
 ```
-hotspot_results.txt
+hotregion_results.txt
 ```
-The output lists each input file separately. For each file, it reports whether hotspots were found, and gives the target site, number of unique patients, sample IDs, and mutation annotations. 
+The output lists each input file separately. For each file, it reports whether hot regions were found, and gives the target region, region span, number of unique patients, sample IDs, and mutation annotations. 
