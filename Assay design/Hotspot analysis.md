@@ -5,7 +5,7 @@
 ## 1. Go to the analysis directory
 Go to a directory dedicated to your analysis:
 ```
-cd /your_directory/hot_spot_analysis/
+cd /your_directory/hot_spot__region_analysis/
 ```
 The directory should contain the simplified input files created from downloaded COSMIC data. 
 
@@ -23,7 +23,7 @@ from collections import defaultdict
 
 # ======= SETTINGS =======
 # Directory where the script will be run
-ROOT = Path("/your_dictionary/hot_spot_analysis")
+ROOT = Path("/your_dictionary/hot_spot_region_analysis")
 
 # Hotspot threshold: same site must appear in  ≥ N unique patients
 MIN_UNIQUE_PATIENTS = 3
