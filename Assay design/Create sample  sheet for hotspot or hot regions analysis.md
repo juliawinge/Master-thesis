@@ -36,7 +36,7 @@ These column names are required as input for the downstream scripts.
 ## 5. Save the sample sheet
 Save the file in `.tsv` or `.txt` format in the following folder
 ```
-/your_directory/hot_spot_analysis
+/your_directory/hot_spot_region_analysis
 ```
 Name the file using the gene name followed by tissue or histology type.
 <img width="465" height="91" alt="image" src="https://github.com/user-attachments/assets/a086b365-e734-411f-982a-614bfeb7b865" />
