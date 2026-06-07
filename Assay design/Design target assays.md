@@ -24,68 +24,71 @@ Copy the DNA sequence.
 
 ## 4. 
 Go to:https://www.ncbi.nlm.nih.gov/tools/primer-blast/
-Paste the copied DNA sequence and click **Submit**.
+Paste the copied DNA sequence.
 
+Set the range according to the 
+Needs to take avalible regions into consideration, target site is located at position 106-107. With a safety margin of at least 5 bases on each side of the target, the target interval including safety margins was 100-113. Forward <100 Reverse >113
 
-
-
-## 5. Identify highly similar regions 
-Look at the BLAT results. The correct target region should have the highest score and 100% identity. 
-
-For each additional BLAT hit with high similarity, click **details**. 
-<img width="881" height="425" alt="image" src="https://github.com/user-attachments/assets/438e704d-0597-44b2-b42b-8142e4383e46" />
-Denote which regions are identical for each hit. 
-<img width="456" height="323" alt="image" src="https://github.com/user-attachments/assets/c019acf6-769d-4fd7-bd2b-58fa795b92d7" />
-
-This example resulted in:
-```text
-87-148:  87-93
-         100-116
-         120-126
-         131-148
-
-100-193: 100-115
-         131-148
-         181-193
-
-102-209: 102-115
-         174-187
-         194-209
-
-100-148: 100-115
-         130-148
-
-168-212: 168-185
-         197-212
-
-108-148: 108-119
-         133-148
-
-130-151: 130-151
-```
-Overlapping of identical intervalls werw mereged to define regions where the sequence is not unique. 
-
-Example of the merged intervals:
-```
-87-93
-100-126
-130-151
-168-212
-```
-These merged intervals indicate where sequences are identical. Primer placement in these regions should therefore be avoided when possible. 
-
-The remaining intervals can be considered safer for primer placement. 
+Then the identified highly similar regions needs to be taken into consideration, as in previus example in part 7.
 ```
 1-86
 94-99
 127-129
 152-168
-````
+```
+Apply the appropriate ranges: 
+<img width="1119" height="253" alt="image" src="https://github.com/user-attachments/assets/04768f38-60c6-4c62-83a9-88fc9509021b" />
 
-## 6. Evaluate primer placement
-Compare the target site and possible primer positions with the merged identical intervals. 
-In this example, the target site is located at position 106-107. With a safety margin of at least 5 bases on each side of the target, the target interval including safety margins was 100-113.
 
-The preferred design is to place both primers in unique regions, without BLAT hits. 
-If it's not possible, at least one primer should be placed in a unique region, especially the 3′ end, since it is important for specificity. 
-The 3 ′ end of at least one primer should contain at least 5 bases that are unique to the target sequence. 
+Apply the following settings:
+PCR product size: Min= 60, max to 80
+<img width="710" height="268" alt="image" src="https://github.com/user-attachments/assets/6c6c767f-727f-41a6-841e-3e9614fe8ad4" />
+
+Database: Genomes for selected eukaryotic organisms
+<img width="1164" height="400" alt="image" src="https://github.com/user-attachments/assets/8fd2e86c-f662-4c75-8f4e-11d5bd6b9168" />
+
+
+Scroll down and open the advanced parameters:
+<img width="313" height="43" alt="image" src="https://github.com/user-attachments/assets/fd7ee89f-b547-4019-9353-4781018e53c1" />
+
+Set Max Self complimentary: Any = 5, 3´=3
+Max pair complamantary:  Any = 5, 3´=3
+<img width="772" height="108" alt="image" src="https://github.com/user-attachments/assets/1b0fbaac-e67a-465c-be56-5922297a71c3" />
+
+
+Click "Get parameters"
+<img width="605" height="61" alt="image" src="https://github.com/user-attachments/assets/73070795-6832-49ac-b193-a4e99ca6eb5e" />
+
+
+Click Check
+<img width="605" height="61" alt="image" src="https://github.com/user-attachments/assets/e1ce37e5-a7a9-4027-9711-a76baa2b531d" />
+
+
+check the box and click submit
+
+click submit
+<img width="1490" height="305" alt="image" src="https://github.com/user-attachments/assets/5ec2b887-eee8-42c2-a902-196c5aed9e28" />
+
+
+Hower over the diffrent results and denote the range where the forvard and reverse primers are within. 
+<img width="610" height="63" alt="image" src="https://github.com/user-attachments/assets/f6d574d4-d3e8-4d0e-9673-30ac26a3cac1" />
+
+<img width="1465" height="222" alt="image" src="https://github.com/user-attachments/assets/bf2a4c8b-4a2b-4682-9258-df865cd4d095" />
+
+Forward är 79-96
+94, 95, 96 Last 3 is uniqe (3´anchering) also the start 79-86 unuiq 
+
+126-145
+127-129 är unik, 126 är inte de så inte 3´anchoring
+
+<img width="1415" height="139" alt="image" src="https://github.com/user-attachments/assets/258e4f7e-7909-4b77-8198-a13858a11831" />
+
+Condition is 3´anchering where at lest the 3 last bases are uniqe.
+
+The primers were designed for multiplex PCR, where several targets are amplified at the same time. 
+
+This requiers that the primers need similar conditions, especially GC content, since it affects the melting temperature. The amplicons were kept short to make them suitable for fragmented DNA. 
+
+Prioritize primers that have low self 3´complimentrary , then also self complimentary. 
+
+Select 3 primers per site that shows the most promesing conditions. 
