@@ -1,5 +1,5 @@
 
-# Download SRR file 
+# Download SRR file using UBUNTU
 *The following step was performed using a laptop. The files could preferably be downloaded directly to an external disk or USB drive, since SRA files can be large.* 
 
 ## Requirements
@@ -18,6 +18,8 @@ Create a tab-separated samplesheet:
 ```
 nano samples.tsv
 ```
+<br>
+
 Add the SRAIDs and the sample names. The file must be tab-separated:
 ```
 SRA_ID SAMPLE_NAME
@@ -28,6 +30,8 @@ SRRxxxxxxxxx	xxx_OE
 SRRxxxxxxxxx	xxx_OE
 ............ ......
 ```
+<br>
+
 Save the file with ```Ctrl + O```, press ```Enter```, and exit with ```Ctrl+X```.
 
 ## 3. Create a download script
@@ -35,6 +39,7 @@ Create a script for downloading all samples listed in the sample sheet:
 ```
 nano prefetch_only.sh
 ```
+<br>
 
 Paste the following code:
 ```
@@ -61,6 +66,8 @@ done
 
 echo "All SRR files are downloaded."
 ```
+<br>
+
 Save the file with ```Ctrl + O```, press ```Enter```, and exit with ```Ctrl+X```.
 
 ## 4. Make the script runnable
@@ -71,5 +78,7 @@ chmod +x prefetch_only.sh
 ```
 ./prefetch_only.sh | tee prefetch.log
 ```
+<br>
+
 Downloaded ```.sra``` files will be saved in :
-/your_directory/sample_download/your_dataset/sra
+`/your_directory/sample_download/your_dataset/sra`
