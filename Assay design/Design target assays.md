@@ -1,5 +1,5 @@
 # Design target assays
-**
+*This step describes how to design candidate primer pairs for target sites that have passed the BLAT specificity assessment. The goal is to generate short amplicons suitable for fragmented DNA while minimizing the risk of off-target amplification.*
 
 ## 1. Retrieve genomic coordinates from COSMIC
 Go to COSMIC and open the selected gene and tissue as mentioned in section 1. 
