@@ -78,3 +78,7 @@ chmod +x create_goi_rmats_summary.sh
 ```
 
 ## 5. Output
+The results will be saved in the analysis directory as:
+`goi_rmats_summary.tsv`
+
+The output file lists the number of raw and filtered AS events for each GOI, comparison and event type. 
