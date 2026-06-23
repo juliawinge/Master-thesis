@@ -1,4 +1,4 @@
-## 1. Channge to the correct directory
+## 1. Change to the correct directory
 Go to the directory containing the patient-matched rMATS result:
 ```
 cd /your_directory/sample_download/your_dataset/rMATS/results/paired_control
@@ -11,7 +11,8 @@ Create a shell script that summarizes the rMATS results:
 nano create_goi_rmats_summary.sh
 ```
  <br>
- Paste thr following code:
+ 
+Paste thr following code:
 ```
 #!/bin/bash
 
@@ -62,5 +63,18 @@ done < "$GOI"
 
 echo "Done. Output written to goi_rmats_summary.tsv"
 ```
+<br>
 
-Save 
+Save the file by pressing `Ctrl+O`, then `Enter`, followed by `Ctrl+X`.
+
+## 3. Make the script runable
+```
+chmod +x create_goi_rmats_summary.sh
+```
+
+## 4. Run the summary script
+```
+./create_goi_rmats_summary.sh
+```
+
+## 5. Output
