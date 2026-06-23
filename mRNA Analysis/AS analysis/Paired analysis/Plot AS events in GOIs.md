@@ -13,7 +13,7 @@ The workflow contains two main steps:
 ## 1. Go to the analysis  directory
 Go to the directory containing the patient-matched rMATS result:
 ```
-cd /your_directory/sample_download/your_datasetrMATS/results/paired_control
+cd /your_directory/sample_download/your_dataset/rMATS/results/paired_control
 ```
  <br>
 
