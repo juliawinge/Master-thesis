@@ -1,12 +1,135 @@
-# Create and run the hotspot analysis using UBUNTU
-*This step identifies recurrent mutation sites, referred to here as hotspots, from the simplified COSMIC sample sheets. A hotspot is defined as the same cDNA position occurring in at least three unique patients.* <br>
+# Plot rMATS events in GOIs from matched samples using UBUNTU
+*This step summarizes significant alternative splicing (AS) events in selected genes of interest (GOIs) from patient-matched ectopic lesion samples, and visualizes the results as stacked bar plots.*
 
-*The script scans all `.tsv` and `.txt` files in the analysis directory and writes a summary file called `hotspot_results.txt`.*
+*Only patients with both ovarian and peritoneal lesion samples, as well as a corresponding eutopic endometrium sample, were included. For each patient, rMATS output folders should already have been generated from paired comparisons between the ovarian lesion and the eutopic endometrium, and between the peritoneal lesion and the eutopic endometrium.*
+
+The workflow contains two main steps:
+1. Create a summary table called `goi_rmats_summary.tsv`.
+2. Use the summary table to generate a stacked bar plot.
+
+## Requirements
+
+
+## 1. Go to the analysis  directory
+Go to the directory containing the patient-matched rMATS result:
+```
+cd /your_directory/sample_download/your_datasetrMATS/results/paired_control
+```
+ <br>
+
+The directory should contain one folder for each paired comparison. For example:
+```
+P7_Ovary
+P7_Ect
+P13_Ovary
+P13_Ect
+P16_Ovary
+P16_Ect
+```
+Here, `P13_Ovary` represents the rMATS comparison between patient 13 ovarian lesion and its 13 eutopic endometrium. Similarly, `P13_Ect` represents the rMATS comparison between patient 13 peritonial lesion and its eutopic endometrium.
+
+Each comparison folder should contain rMATS output files for all event types, for example: 
+```
+SE.MATS.JCEC.txt 
+SE.MATS.JCEC.filtered.txt 
+A3SS.MATS.JCEC.txt 
+A3SS.MATS.JCEC.filtered.txt 
+A5SS.MATS.JCEC.txt 
+A5SS.MATS.JCEC.filtered.txt 
+MXE.MATS.JCEC.txt 
+MXE.MATS.JCEC.filtered.txt 
+RI.MATS.JCEC.txt 
+RI.MATS.JCEC.filtered.txt
+```
+## 2. Create a GOI list
+Create a text file contaning the genes of intres:
+
+Save the file by pressing `Ctrl+O`, then `Enter`, followed by `Ctrl+X`.
+
+Only patients with both ovarian and peritoneal lesion samples, as well as a corresponding eutopic endometrium sample, were included.* <br>
+
+Allt detta är skapat i en egen mapp för endast paired samples
+/your_directory/sample_download/your_datasetrMATS/results/paired_control
+
+Okej för de patienter som har peritoniala och ovariala lesions prover, samt tillhörande interna kontroll dvs eutopic endometium. 
+
+Utgår från goi_rmats_summary.tsv vilkety är en sammanfattning av (paired) filtered as events för  between ovarial och eutopic samt  peritoneal och eutopic i varje GOI.
+
+Skapad via: 
+```
+#!/bin/bash
+
+GOI="goi.txt"
+
+COMPARISONS=(
+  "P7_Ovary"
+  "P13_Ovary"
+  "P16_Ovary"
+  "P17_Ovary"
+  "P13_Ect"
+  "P16_Ect"
+  "P17_Ect"
+)
+
+EVENTS=("SE" "A3SS" "A5SS" "MXE" "RI")
+
+echo -e "Gene\tComparison\tEvent_type\tRaw_events\tFiltered_events" > goi_rmats_summary.tsv
+
+while read gene; do
+  for comp in "${COMPARISONS[@]}"; do
+    for ev in "${EVENTS[@]}"; do
+
+      raw_file="${comp}/${ev}.MATS.JCEC.txt"
+      filt_file="${comp}/${ev}.MATS.JCEC.filtered.txt"
+
+      raw_count=0
+      filt_count=0
+
+      if [ -f "$raw_file" ]; then
+        raw_count=$(awk -v g="$gene" 'BEGIN{FS="\t"} NR>1 {gsub(/"/, "", $3); if ($3==g) count++} END{print count+0}' "$raw_file")
+      fi
+
+      if [ -f "$filt_file" ]; then
+        filt_count=$(awk -v g="$gene" 'BEGIN{FS="\t"} NR>1  {gsub(/"/, "", $3); if ($3==g) count++} END{print count+0}' "$filt_file")
+      fi
+
+      echo -e "${gene}\t${comp}\t${ev}\t${raw_count}\t${filt_count}" >> goi_rmats_summary.tsv
+
+    done
+  done
+done < "$GOI"
+
+echo "Done. Output written to goi_rmats_summary.tsv"
+```
+där "P7_Ovary" är output map från rMATS results för P7_Ovary vs P7_Eutopic, osv för varje patient och provtyp som listas. 
+
+Den använder goi.txt som input, den ska ligga i den desegnedade mappen och är i följande format SLC1A1
+STAT3
+TCHH
+CYP4F11
+ENOSF1, dvs endast dina listade GOIs
+
+Det skapas då en goi_rmats_summary.tsv i /your_directory/sample_download/your_datasetrMATS/results/paired_control
+
+Gene	Comparison	Event_type	Raw_events	Filtered_events
+SLC1A1	P7_Ovary	SE	2	0
+SLC1A1	P7_Ovary	A3SS	0	0
+SLC1A1	P7_Ovary	A5SS	0	0
+SLC1A1	P7_Ovary	MXE	0	0
+SLC1A1	P7_Ovary	RI	0	0
+SLC1A1	P13_Ovary	SE	1	0
+
+
+
+
+
+
+*The script ....*
 
 ## 1. Go to the analysis directory
 Go to a directory dedicated to your analysis:
 ```
-cd /your_directory/hot_spot__region_analysis/
+cd /your_directory/sample_download/your_dataset/rMATS.....
 ```
  <br>
  
@@ -15,227 +138,176 @@ The directory should contain the simplified input files created from downloaded 
 ## 2. Create a Python script
 Create a new Python script:
 ```
-nano run_hotspot.py
+nano check_goi_per_person.py
 ```
  <br>
  
 Paste the following code:
 ```
-import csv
-import re
-from pathlib import Path
-from collections import defaultdict
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 
-# ======= SETTINGS =======
-# Directory where the script will be run
-ROOT = Path("/your_dictionary/hot_spot_region_analysis")
+# ===== FONT =====
+font_path = "/usr/share/fonts/truetype/msttcorefonts/Georgia.ttf"
+fm.fontManager.addfont(font_path)
 
-# Hotspot threshold: same site must appear in  ≥ N unique patients
-MIN_UNIQUE_PATIENTS = 3
+plt.rcParams.update({
+    "font.family": "serif",
+    "font.serif": ["Georgia"],
+    "font.size": 18,
+    "axes.titlesize": 22,
+    "axes.labelsize": 20,
+    "xtick.labelsize": 18,
+    "ytick.labelsize": 18,
+    "legend.fontsize": 18,
+    "legend.title_fontsize": 18,
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42,
+    "svg.fonttype": "none"
+})
 
-# Column names expected in the TSV/TXT files
-COL_SAMPLE_ID = "sample_id" 
-COL_SAMPLE_NAME = "sample_name"  
-COL_MUT = "cds_mutation"
+# ===== DATA =====
+df = pd.read_csv("goi_rmats_summary.tsv", sep="\t")
 
-# File type to scan under ROOT
-ALLOWED_SUFFIXES = {".tsv", ".txt"}
+events = ["SE", "A3SS", "A5SS", "MXE", "RI"]
 
-# Output summary file written inside ROOT
-OUTPUT_FILENAME = "hotspot_results.txt"
-# ==================================================================================================
+genes = ["CYP4F11", "ENOSF1", "SLC1A1", "STAT3", "TCHH"]
 
-# Extract the numerical cDNA-position from the HGVS c.-notation to group mutations
-# that occur at the same site. Potential variants in the 3'UTR (c.*) are excluded from this analysis. 
-def pos_from_hgvs(h: str):
+# ===== COLORS =====
+event_colors = {
+    "SE": "#DD8452",
+    "A3SS": "#4C72B0",
+    "A5SS": "#55A868",
+    "MXE": "#B39FDD",
+    "RI": "#D62728"
+}
 
-# Ignore empty values and 3'UTR variants (c.*). 
-    h = (h or "").strip()
-    if not h or h.startswith("c.*"):
-        return None
+# ===== PATIENTS AND COMPARISONS =====
+patients = ["13", "16", "17"]
 
-# If there are indels, the positions are represented by the starting position of the region.
-    m = re.match(r"^c\.(\d+)([+-])(\d+)_", h)
-    if m:
-        base, sign, off = int(m.group(1)), m.group(2), int(m.group(3))
-        return base + off if sign == "+" else base - off
+comparisons = {
+    "13": {"Ovary": ["P13_Ovary"], "Peritoneal": ["P13_Ect"]},
+    "16": {"Ovary": ["P16_Ovary"], "Peritoneal": ["P16_Ect"]},
+    "17": {"Ovary": ["P17_Ovary"], "Peritoneal": ["P17_Ect"]}
+}
 
+# ===== FUNCTION =====
+def plot_panel(ax, data, comparisons, value_col, title, ylim, ylabel=False):
+    sub = data[data["Comparison"].isin(comparisons)]
 
-# If there are point mutations in the intronic region, the position is calculated as the exon position
-# +/- intronic offset. 
-    m = re.match(r"^c\.(\d+)([+-])(\d+)", h)
-    if m:
-        base, sign, off = int(m.group(1)), m.group(2), int(m.group(3))
-        return base + off if sign == "+" else base - off
+    pivot = (
+        sub.groupby(["Gene", "Event_type"])[value_col]
+        .sum()
+        .unstack(fill_value=0)
+    )
 
-# If there are point mutations in the exonic region, the numeric cDNA position directly represents
-# the mutation site. 
-    m = re.match(r"^c\.(\d+)", h)
-    return int(m.group(1)) if m else None
-# ==================================================================================================
+    # Ensure all genes are present, even if they have zero events
+    pivot = pivot.reindex(genes, fill_value=0)
 
-# Read TSV/TXT file and extract the minimal information needed for hotspot calling:
-# patient (sample_name), sample (sample_id), and a numeric cDNA position. 
-def read_table(path: Path):
-    rows = []
+    # Ensure all event types are present
+    for ev in events:
+        if ev not in pivot.columns:
+            pivot[ev] = 0
 
-# Open input file (tab separated).   
-    with path.open(newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
+    pivot = pivot[events]
 
-# Check if the file has a header.         
-        if not reader.fieldnames:
-            raise ValueError("Empty file or missing header.")
+    pivot.plot(
+        kind="bar",
+        stacked=True,
+        ax=ax,
+        edgecolor="black",
+        color=[event_colors[ev] for ev in events],
+        width=0.7
+    )
 
-# Requires sample_name and cds_mutation. 
-        if COL_SAMPLE_NAME not in reader.fieldnames or COL_MUT not in reader.fieldnames:
-            raise ValueError(
-                f"Missing required column(s). Found: {reader.fieldnames}. "
-                f"Required: {COL_SAMPLE_NAME}, {COL_MUT}  (sample_id optional)."
-            )
-            
-#  sample_id is optional but is kept for traceability. 
-        has_id = COL_SAMPLE_ID in reader.fieldnames
+    ax.set_title(title, fontsize=18, loc="left")
+    ax.set_xlabel("")
+    ax.set_ylim(0, ylim)
 
-# Go through rows and extract relevant fields. 
-        for r in reader:
-            sname = (r.get(COL_SAMPLE_NAME) or "").strip()
-            mut = (r.get(COL_MUT) or "").strip()
-            sid = (r.get(COL_SAMPLE_ID) or "").strip() if has_id else ""
+    if ylabel:
+        ax.set_ylabel("Number of events", fontsize=18)
+    else:
+        ax.set_ylabel("")
 
-# Skip rows with missing sample_name or mutation. sample_name defines unique patient -> must exist
-            if not sname or not mut:
-                continue
+    ax.tick_params(axis="x", rotation=45, labelsize=15)
+    ax.tick_params(axis="y", labelsize=15)
 
-# Convert HGVS -> numerical cDNA position. 
-            pos = pos_from_hgvs(mut)
-            if pos is None:
-                continue
-                
-# Store mutations linked to patient and position. 
-            rows.append((pos, sname, sid, mut))
+# ===== FIGURE =====
+fig, axes = plt.subplots(
+    nrows=3,
+    ncols=2,
+    figsize=(13, 13),
+    sharey=True
+)
 
-    return rows
-# ==================================================================================================
+ylim = 5
 
-# Identify hotspots by grouping by site and counting unique patients (unique sample_name) per site.
-# One patient contributes at most once per site. 
-def find_hotspots(rows):
+for row, patient in enumerate(patients):
+    plot_panel(
+        axes[row, 0],
+        df,
+        comparisons[patient]["Ovary"],
+        "Filtered_events",
+        f"{chr(65 + row*2)}) Patient {patient} - Ovary",
+        ylim,
+        ylabel=True
+    )
 
-    # pos -> sample_name -> {"sample_ids": set(), "muts": set ()}
-    per_pos = defaultdict(lambda: defaultdict(lambda: {"sample_ids": set(), "muts": set()}))
+    plot_panel(
+        axes[row, 1],
+        df,
+        comparisons[patient]["Peritoneal"],
+        "Filtered_events",
+        f"{chr(66 + row*2)}) Patient {patient} - Peritoneal",
+        ylim,
+        ylabel=True
+    )
 
-    for pos, sname, sid, mut in rows:
-        per_pos[pos][sname]["muts"].add(mut)
-        if sid:
-            per_pos[pos][sname]["sample_ids"].add(sid)
+for ax in axes[:,1]:
+   ax.tick_params (axis="y",labelleft=True)
 
-    hotspots = []
-    for pos, patients in per_pos.items():
-        n_unique = len(patients)
-        if n_unique >= MIN_UNIQUE_PATIENTS:
-            hotspots.append({
-                "pos": pos,
-                "n_unique": n_unique,
-                "patients": patients,  # sample_name -> {"sample_ids", "muts"}
-            })
+# ===== LEGEND =====
+handles, labels = axes[0, 0].get_legend_handles_labels()
 
-# Sort: most patients first, then lowest position
-    hotspots.sort(key=lambda h: (-h["n_unique"], h["pos"]))
-    return hotspots
-# ==================================================================================================
+for ax in axes.flatten():
+    legend = ax.get_legend()
+    if legend is not None:
+        legend.remove()
 
-# Find all candidate input files under ROOT
-def main():
-    files = []
-    for suf in ALLOWED_SUFFIXES:
-        files.extend(ROOT.rglob(f"*{suf}"))
- 
- # Avoid re-reading our own output file if it matches the suffix. 
-    files = sorted([p for p in files if p.name != OUTPUT_FILENAME])
+fig.legend(
+    handles,
+    labels,
+    title="Event type",
+    loc="center right",
+    bbox_to_anchor=(1.02, 0.85)
+)
 
-    if not files:
-        print(f"No input files found {ALLOWED_SUFFIXES} under {ROOT}", flush=True)
-        return
+plt.tight_layout(rect=[0.03, 0.03, 0.88, 0.98])
 
-    out_path = ROOT / OUTPUT_FILENAME
-    summary_lines = []
-
-# Print run settings
-    print(f" Hotspot search in {ROOT}", flush=True)
-    print(f"   - patient identifier: {COL_SAMPLE_NAME}", flush=True)
-    print(f"   - threshold: ≥{MIN_UNIQUE_PATIENTS} unique patients per site\n", flush=True)
-
-    for path in files:
-        rel = path.relative_to(ROOT)
-        header = f"\n=== {rel} ==="
-        print(header, flush=True)
-        summary_lines.append(header)
-
-# Read and parse file.
-        try:
-            rows = read_table(path)
-        except Exception as e:
-            msg = f"[ERROR] {rel}: {e}"
-            print(msg, flush=True)
-            summary_lines.append(msg)
-            continue
-
-        hotspots = find_hotspots(rows)
-
-        if not hotspots:
-            msg = f"No hotspots found (≥{MIN_UNIQUE_PATIENTS} unique patients at same site)."
-            print(msg, flush=True)
-            summary_lines.append(msg)
-            continue
-
-        msg = f"Found {len(hotspots)} hotspot(s):"
-        print(msg, flush=True)
-        summary_lines.append(msg)
-
-# Print each hotspot and the patients contributing to it
-        for i, h in enumerate(hotspots, 1):
-            line = f"[{i}] SITE {h['pos']} (unique patients: {h['n_unique']})"
-            print(line, flush=True)
-            summary_lines.append(line)
-
-# List patients, with their mutations and sample_ids. 
-            for sname in sorted(h["patients"].keys()):
-                muts = "; ".join(sorted(h["patients"][sname]["muts"]))
-                sids = sorted(h["patients"][sname]["sample_ids"])
-
-                if sids:
-                    line2 = f"   - {sname} [sample_id: {', '.join(sids)}]: {muts}"
-                else:
-                    line2 = f"   - {sname}: {muts}"
-
-                print(line2, flush=True)
-                summary_lines.append(line2)
-
-# Save the same summary as the terminal output
-    out_path.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
-    print(f"\n Saved summary: {out_path}", flush=True)
-                
-
-if __name__ == "__main__":
-    main()
-
+# ===== SAVE =====
+plt.savefig(
+    "Figure_GOI_individual_comparisons_ovary_peritoneal_filtered_panel.png",
+    dpi=600,
+    bbox_inches="tight"
+)
+plt.show()
 ```
  <br>
  
 Save the file by pressing `Ctrl+O`, then `Enter`, followed by `Ctrl+X`.
 
-## 4. Run the Hotspot analysis
+## 4. Run the script to create the plot
 Run the script:
 ```
-python3 -u run_hotspot.py
+python3 check_goi_per_person.py
 ```
 
 ## 5. Output
 The results will be saved in the analysis directory as:
 ```
-hotspot_results.txt
+Figure_GOI_individual_comparisons_ovary_peritoneal_filtered_panel.png
 ```
  <br>
  
-The output lists each input file separately. For each file, it reports whether hotspots were found, and gives the target site, number of unique patients, sample IDs, and mutation annotations. 
+The plot will be presented when it is done. 
