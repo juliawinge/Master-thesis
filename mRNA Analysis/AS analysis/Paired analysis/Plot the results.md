@@ -1,24 +1,32 @@
+# Plot GOI rMATS events from paired samples using UBUNTU
+*This step creates a stacked bar plot showing filtered AS events in selected GOIs from patient-matched ectopic lesion samples.* <br>
+
+*The script uses `goi_rmats_summary.tsv` generated in the previous step as input. Only patients with both ovarian and peritoneal lesion samples are included in the final figure.*
+
 ## 1. Change to the correct directory
-Go to the directory containing the patient-matched rMATS result:
+Go to the directory containing the GOI summary table:
 ```
 cd /your_directory/sample_download/your_dataset/rMATS/results/paired_control
 ```
  <br>
 
+ The directory should contain: `goi_rmats_summary.tsv`.
+
 ## 2. Create the plotting script
-Create a python script to visulize the filtered AS events:
+Create a Python script to visualize the filtered AS events:
 ```
 nano check_goi_per_person.py
 ```
  <br>
  
-Paste thr following code:
+Paste the following code:
 ```
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 
 # ===== FONT =====
+# Add Georgia font to make the figure match the thesis style.
 font_path = "/usr/share/fonts/truetype/msttcorefonts/Georgia.ttf"
 fm.fontManager.addfont(font_path)
 
@@ -37,14 +45,18 @@ plt.rcParams.update({
     "svg.fonttype": "none"
 })
 
-# ===== DATA ==========================================================
+# ===== DATA =====
+# Read the summary table containing raw and filtered AS event counts. 
 df = pd.read_csv("goi_rmats_summary.tsv", sep="\t")
 
+# rMATS event types included in the plot.
 events = ["SE", "A3SS", "A5SS", "MXE", "RI"]
 
+# Genes of interest shown on the x-axis.
 genes = ["CYP4F11", "ENOSF1", "SLC1A1", "STAT3", "TCHH"]
 
-# ===== COLORS =========================================================
+# ===== COLORS =====
+# Define one color for each AS event type, to match the other plots in the report. 
 event_colors = {
     "SE": "#DD8452",
     "A3SS": "#4C72B0",
@@ -53,9 +65,11 @@ event_colors = {
     "RI": "#D62728"
 }
 
-# ===== PATIENTS AND COMPARISONS ======================================
+# ===== PATIENTS AND COMPARISONS =====
+# Patients included in the final paired comparison figure.
 patients = ["13", "16", "17"]
 
+# Define which comparison folders correspond to ovarian and peritoneal lesions. 
 comparisons = {
     "13": {"Ovary": ["P13_Ovary"], "Peritoneal": ["P13_Ect"]},
     "16": {"Ovary": ["P16_Ovary"], "Peritoneal": ["P16_Ect"]},
@@ -63,25 +77,29 @@ comparisons = {
 }
 
 # ===== FUNCTION =====
+# Create one stacked barplot panel for one patient and lesion type.
 def plot_panel(ax, data, comparisons, value_col, title, ylim, ylabel=False):
     sub = data[data["Comparison"].isin(comparisons)]
 
+    # Summarize filtered events per gene and event type.
     pivot = (
         sub.groupby(["Gene", "Event_type"])[value_col]
         .sum()
         .unstack(fill_value=0)
     )
 
-    # Ensure all genes are present, even if they have zero events
+    # Ensure all GOIs are shown, even if no significant events were detected.
     pivot = pivot.reindex(genes, fill_value=0)
 
-    # Ensure all event types are present
+    # Ensure all event types are included, even if absent in one comparison. 
     for ev in events:
         if ev not in pivot.columns:
             pivot[ev] = 0
 
+    # Keep event types in the same order in all panels.
     pivot = pivot[events]
 
+    # Create stacked bar plot.
     pivot.plot(
         kind="bar",
         stacked=True,
@@ -91,6 +109,7 @@ def plot_panel(ax, data, comparisons, value_col, title, ylim, ylabel=False):
         width=0.7
     )
 
+    # Format panel title and axes.
     ax.set_title(title, fontsize=18, loc="left")
     ax.set_xlabel("")
     ax.set_ylim(0, ylim)
@@ -104,6 +123,7 @@ def plot_panel(ax, data, comparisons, value_col, title, ylim, ylabel=False):
     ax.tick_params(axis="y", labelsize=15)
 
 # ===== FIGURE =====
+# Create figure with one row per patient and separate columns for lesion type.
 fig, axes = plt.subplots(
     nrows=3,
     ncols=2,
@@ -113,6 +133,7 @@ fig, axes = plt.subplots(
 
 ylim = 5
 
+# Plot ovarian and peritoneal lesion comparisons for each patient.
 for row, patient in enumerate(patients):
     plot_panel(
         axes[row, 0],
@@ -134,17 +155,21 @@ for row, patient in enumerate(patients):
         ylabel=True
     )
 
+# Show y-axis labels on the right column as well.
 for ax in axes[:,1]:
    ax.tick_params (axis="y",labelleft=True)
 
 # ===== LEGEND =====
+# Create one shared legend for the entire figure. 
 handles, labels = axes[0, 0].get_legend_handles_labels()
 
+# Remove individual legends from each panel. 
 for ax in axes.flatten():
     legend = ax.get_legend()
     if legend is not None:
         legend.remove()
 
+# Add shared legend to the right side of the figure. 
 fig.legend(
     handles,
     labels,
@@ -156,6 +181,7 @@ fig.legend(
 plt.tight_layout(rect=[0.03, 0.03, 0.88, 0.98])
 
 # ===== SAVE =====
+# Save the figure as a PNG file. 
 plt.savefig(
     "Figure_GOI_individual_comparisons_ovary_peritoneal_filtered_panel.png",
     dpi=600,
@@ -178,4 +204,4 @@ python3 check_goi_per_person.py
 The results will be saved in the analysis directory as:
 `Figure_GOI_individual_comparisons_ovary_peritoneal_filtered_panel.png`
 
-The figure summarizes filtered AS evenets in the selected GOIs for matched ectopic lesions samples. Each row represents one patient, and the columns show ovarian and preitoneial lesion comparisons. Bars represents GOIs, and stacked colors represent diffrent rMATS event types.
+The figure summarizes filtered AS events in the selected GOIs for matched ectopic lesion samples. Each row represents one patient, and the columns show comparisons of ovarian and peritoneal lesions. Bars represent GOIs, and stacked colors represent different rMATS event types.
